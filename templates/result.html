@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+   <title>Result</title>
+   <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css">
+   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+   <script src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>
+   <script src="https://html2canvas.hertzen.com/dist/html2canvas.js"></script>
+   <style>
+       .table-container {
+           margin-bottom: 30px;
+       }
+       td[contenteditable="true"] {
+           background-color: lightyellow;
+       }
+   </style>
+   <script>
+       function saveTableAsPDF(tableId, filename) {
+           const element = document.getElementById(tableId);
+           html2pdf()
+               .set({
+                   margin: [10, 10, 10, 10],
+                   filename: filename,
+                   image: { type: 'jpeg', quality: 0.98 },
+                   html2canvas: { scale: 2 },
+                   jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+               })
+               .from(element)
+               .save();
+       }
+
+       function saveTableAsJPEG(tableId, filename) {
+           const element = document.getElementById(tableId);
+           html2canvas(element).then(function(canvas) {
+               const link = document.createElement('a');
+               link.href = canvas.toDataURL('image/jpeg');
+               link.download = filename;
+               link.click();
+           });
+       }
+   </script>
+</head>
+<body>
+   <h1>Tables Generated</h1>
+   {% for table in tables %}
+       <h2>{{ table_heading[loop.index - 1] }}</h2>
+       <div class="table-container">
+           <table id="table_{{ loop.index }}" class="display">
+               <thead>
+                   <tr>
+                       {% for column in table.columns %}
+                           <th>{{ column }}</th>
+                       {% endfor %}
+                   </tr>
+               </thead>
+               <tbody>
+                   {% for _, row in table.iterrows() %}
+                       <tr>
+                           {% for column in table.columns %}
+                               <td contenteditable="true">{{ row[column] }}</td>
+                           {% endfor %}
+                       </tr>
+                   {% endfor %}
+               </tbody>
+           </table>
+           <button onclick="saveTableAsPDF('table_{{ loop.index }}', '{{ table_heading[loop.index - 1] }}.pdf')">Save as PDF</button>
+           <button onclick="saveTableAsJPEG('table_{{ loop.index }}', '{{ table_heading[loop.index - 1] }}.jpeg')">Save as JPEG</button>
+       </div>
+   {% endfor %}
+
+   <script>
+       $(document).ready(function() {
+           {% for table in tables %}
+               $('#table_{{ loop.index }}').DataTable();
+           {% endfor %}
+       });
+   </script>
+</body>
+</html>
