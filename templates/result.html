@@ -10,8 +10,11 @@
        .table-container {
            margin-bottom: 30px;
        }
-       td[contenteditable="true"] {
+       .table-container tbody td {
            background-color: lightyellow;
+       }
+       .table-container tbody td:last-child {
+           background-color: lightblue;
        }
    </style>
    <script>
@@ -57,7 +60,11 @@
                    {% for _, row in table.iterrows() %}
                        <tr>
                            {% for column in table.columns %}
-                               <td contenteditable="true">{{ row[column] }}</td>
+                               {% if loop.last %}
+                                   <td contenteditable="true" style="background-color: lightcyan; font-family: Times New Roman, Times, serif;">{{ row[column] }}</td>
+                               {% else %}
+                                   <td contenteditable="true">{{ row[column] }}</td>
+                               {% endif %}
                            {% endfor %}
                        </tr>
                    {% endfor %}

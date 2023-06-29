@@ -17,52 +17,58 @@ def run_script():
   teacher_url = "https://docs.google.com/spreadsheets/d/{}/gviz/tq?tqx=out:csv&sheet={}".format(
     gsheetid, sheet_name)
   teacher_preferences = pd.read_csv(teacher_url).fillna('_')
+  teachers_monday = {}
+  teachers_tuesday = {}
+  teachers_wednesday = {}
+  teachers_thrusday = {}
+  teachers_friday = {}
   teachers_saturday = {}
-  for i, row in teacher_preferences.iterrows():
-    if (row['available on saturday'] == 'yes'):
-      teacher_id = row['teacher_ID']
-      contact = row['contact details']
-      main_subjects = [x.strip() for x in row['main subjects'].split(',')]
-      backup_subjects = [x.strip() for x in row['backup subjects'].split(',')]
-      main_centers = [x.strip() for x in row['main_centers'].split(',')]
-      backup_centers = [x.strip() for x in row['backup_centers'].split(',')]
-      alloted_center = row['alloted center saturday'].strip()
-      teachers_saturday[teacher_id] = {
-        'contact': contact,
-        'main subjects': main_subjects,
-        'backup subjects': backup_subjects,
-        'main centers': main_centers,
-        'backup centers': backup_centers,
-        'alloted center': alloted_center,
-        'slots': []
-      }
   teachers_sunday = {}
-  for i, row in teacher_preferences.iterrows():
-    if (row['available on sunday'] == 'yes'):
-      teacher_id = row['teacher_ID']
-      contact = row['contact details']
-      main_subjects = [x.strip() for x in row['main subjects'].split(',')]
-      backup_subjects = [x.strip() for x in row['backup subjects'].split(',')]
-      main_centers = [x.strip() for x in row['main_centers'].split(',')]
-      backup_centers = [x.strip() for x in row['backup_centers'].split(',')]
-      alloted_center = row['alloted center sunday'].strip()
-      teachers_sunday[teacher_id] = {
-        'contact': contact,
-        'main subjects': main_subjects,
-        'backup subjects': backup_subjects,
-        'main centers': main_centers,
-        'backup centers': backup_centers,
-        'alloted center': alloted_center,
-        'slots': []
-      }
+  days = [
+    'monday', 'tuesday', 'wednesday', 'thrusday', 'friday', 'saturday',
+    'sunday'
+  ]
+  teachers_days = {
+    'monday': teachers_monday,
+    'tuesday': teachers_tuesday,
+    'wednesday': teachers_wednesday,
+    'thrusday': teachers_thrusday,
+    'friday': teachers_friday,
+    'saturday': teachers_saturday,
+    'sunday': teachers_sunday
+  }
 
-  def fill_schedule(COE, schedule, day, teachers_saturday, teachers_sunday):
+  for day in teachers_days.keys():
+    teachers = teachers_days[day]
+    for i, row in teacher_preferences.iterrows():
+      if (row['available on ' + day] == 'yes'):
+        teacher_id = row['teacher_ID']
+        contact = row['contact details']
+        main_subjects = [x.strip() for x in row['main subjects'].split(',')]
+        backup_subjects = [
+          x.strip() for x in row['backup subjects'].split(',')
+        ]
+        main_centers = [x.strip() for x in row['main_centers'].split(',')]
+        backup_centers = [x.strip() for x in row['backup_centers'].split(',')]
+        alloted_center = '_'
+        count = 0
+        teachers[teacher_id] = {
+          'count':count,
+          'contact': contact,
+          'main subjects': main_subjects,
+          'backup subjects': backup_subjects,
+          'main centers': main_centers,
+          'backup centers': backup_centers,
+          'alloted center': alloted_center,
+          'slots': []
+        }
+        teachers_days[day] = teachers
+
+  def fill_schedule(COE, schedule, day, teachers_days):
     contacts = []
     teachers = {}
-    if (day == 'saturday'):
-      teachers = teachers_saturday
-    elif (day == 'sunday'):
-      teachers = teachers_sunday
+    teachers_alloted = []
+    teachers = teachers_days[day]
     # Iterate through the school schedule and assign classes to teachers
     for index, row in schedule.iterrows():
       Timing = row['Timings']
@@ -94,6 +100,7 @@ def run_script():
                   teacher['alloted center'] = COE
                   try:
                     contacts.append(teacher_id + ' : ' + teacher['contact'])
+                    teachers_alloted.append(teacher_id)
                   except:
                     print(teacher['contact'])
                   teacher['slots'] = [x for x in schedule['Timings']]
@@ -101,6 +108,7 @@ def run_script():
                 written = ' '.join(cells[subjects.index(subject)].split(' ')
                                    [0:3]) + ' ' + teacher_id
                 schedule.iloc[index, subjects.index(subject) + 2] = written
+                teacher['count']+=1 
                 teacher['slots'].remove(Timing)
                 alloted = 1
                 break
@@ -117,10 +125,12 @@ def run_script():
                     teacher['alloted center'] = COE
                     teacher['slots'] = [x for x in schedule['Timings']]
                     contacts.append(teacher_id + ' : ' + teacher['contact'])
+                    teachers_alloted.append(teacher_id)
                   written = ' '.join(cells[subjects.index(subject)].split(' ')
                                      [0:3]) + ' ' + teacher_id
                   schedule.iloc[index, subjects.index(subject) + 2] = written
                   teacher['slots'].remove(Timing)
+                  teacher['count']+=1 
                   alloted = 1
                   break
           if (alloted != 1):
@@ -135,10 +145,12 @@ def run_script():
                     teacher['alloted center'] = COE
                     teacher['slots'] = [x for x in schedule['Timings']]
                     contacts.append(teacher_id + ' : ' + teacher['contact'])
+                    teachers_alloted.append(teacher_id)
                   written = ' '.join(cells[subjects.index(subject)].split(' ')
                                      [0:3]) + ' ' + teacher_id
                   schedule.iloc[index, subjects.index(subject) + 2] = written
                   teacher['slots'].remove(Timing)
+                  teacher['count']+=1 
                   alloted = 1
                   break
           if (alloted != 1):
@@ -153,10 +165,12 @@ def run_script():
                     teacher['alloted center'] = COE
                     teacher['slots'] = [x for x in schedule['Timings']]
                     contacts.append(teacher_id + ' : ' + teacher['contact'])
+                    teachers_alloted.append(teacher_id)
                   written = ' '.join(cells[subjects.index(subject)].split(' ')
                                      [0:3]) + ' ' + teacher_id
                   schedule.iloc[index, subjects.index(subject) + 2] = written
                   teacher['slots'].remove(Timing)
+                  teacher['count']+=1 
                   alloted = 1
                   break
           if (alloted != 1):
@@ -164,43 +178,34 @@ def run_script():
                                [0:3]) + ' ' + "not alloted"
             schedule.iloc[index, subjects.index(subject) + 2] = written
             alloted = 1
-    if (day == 'saturday'):
-      teachers_saturday = teachers
-    elif (day == 'sunday'):
-      teachers_sunday = teachers
-    return contacts
+    new_contacts = []
+    for i in range(len(contacts)):
+        dic = teachers[teachers_alloted[i]]
+        st = contacts[i] + ", slots:" + str(dic['count'])
+        new_contacts.append(st)
+    teachers_days[day] = teachers
+    return new_contacts
 
   sheet_name = "COE_list"
   sheet_url = "https://docs.google.com/spreadsheets/d/{}/gviz/tq?tqx=out:csv&sheet={}".format(
     gsheetid, sheet_name)
-  COE_list = pd.read_csv(sheet_url)
-  print(COE_list)
+  COE_list = pd.read_csv(sheet_url).fillna('_')
   tables = []
   table_heading = []
   for index, row in COE_list.iterrows():
-    schedule_sheet_name = row["COE"].strip() + '_' + "sunday"
-    schedule_url = "https://docs.google.com/spreadsheets/d/{}/gviz/tq?tqx=out:csv&sheet={}".format(
-      gsheetid, schedule_sheet_name)
-    schedule = pd.read_csv(schedule_url).fillna('_')
-    contact = fill_schedule(row["COE"], schedule, "sunday", teachers_saturday,
-                            teachers_sunday)
-    missing_values = [' '] * (len(schedule) - len(contact))
-    contact = contact + missing_values
-    schedule['contact details'] = contact
-    tables.append(schedule)
-    table_heading.append(row["COE"].strip() + ' ' + "sunday")
-    schedule_sheet_name = row["COE"].strip() + '_' + "saturday"
-    schedule_url = "https://docs.google.com/spreadsheets/d/{}/gviz/tq?tqx=out:csv&sheet={}".format(
-      gsheetid, schedule_sheet_name)
-    schedule = pd.read_csv(schedule_url).fillna('_')
-    schedule_sheet_name = row["COE"] + '_' + "saturday"
-    contact = fill_schedule(row["COE"], schedule, "saturday",
-                            teachers_saturday, teachers_sunday)
-    missing_values = [' '] * (len(schedule) - len(contact))
-    contact = contact + missing_values
-    schedule['contact details'] = contact
-    table_heading.append(row["COE"].strip() + ' ' + "saturday")
-    tables.append(schedule)
+    COE = row[0].strip()
+    for day in row[1:]:
+      if day in days:
+        schedule_sheet_name = COE + '_' + day
+        schedule_url = "https://docs.google.com/spreadsheets/d/{}/gviz/tq?tqx=out:csv&sheet={}".format(
+          gsheetid, schedule_sheet_name)
+        schedule = pd.read_csv(schedule_url).fillna('_')
+        contact = fill_schedule(COE, schedule, day, teachers_days)
+        missing_values = [' '] * (len(schedule) - len(contact))
+        contact = contact + missing_values
+        schedule['contact details'] = contact
+        tables.append(schedule)
+        table_heading.append(schedule_sheet_name)
 
   # Pass the list of DataFrames to the HTML template
   return render_template('result.html',
